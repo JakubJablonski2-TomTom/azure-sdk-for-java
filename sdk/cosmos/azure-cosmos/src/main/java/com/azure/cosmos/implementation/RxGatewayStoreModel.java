@@ -345,6 +345,8 @@ public class RxGatewayStoreModel implements RxStoreModel {
 
         return httpResponseMono.flatMap(httpResponse -> {
 
+            logger.info("Making request: {}", dumpRequest(request));
+
             // header key/value pairs
             HttpHeaders httpResponseHeaders = httpResponse.headers();
             int httpResponseStatus = httpResponse.statusCode();
@@ -429,6 +431,7 @@ public class RxGatewayStoreModel implements RxStoreModel {
             if (!(exception instanceof CosmosException)) {
                 // wrap in CosmosException
                 logger.error("Network failure", exception);
+                logger.info("Network failure for request: {}", dumpRequest(request));
 
                 int statusCode = 0;
                 if (WebExceptionUtility.isNetworkFailure(exception)) {
@@ -480,6 +483,20 @@ public class RxGatewayStoreModel implements RxStoreModel {
 
             return Mono.error(dce);
         });
+    }
+
+    private String dumpRequest(RxDocumentServiceRequest request) {
+        byte[] content = request.getContentAsByteArray();
+        String contentString = content != null ? new String(content, StandardCharsets.UTF_8) : "null";
+
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("OperationType: ").append(request.getOperationType()).append("\n");
+        stringBuilder.append("ResourceType: ").append(request.getResourceType()).append("\n");
+        stringBuilder.append("ResourceId: ").append(request.getResourceId()).append("\n");
+        stringBuilder.append("ResourceAddress: ").append(request.getResourceAddress()).append("\n");
+        stringBuilder.append("Headers: ").append(request.getHeaders()).append("\n");
+        stringBuilder.append("Content: ").append(contentString).append("\n");
+        return stringBuilder.toString();
     }
 
     private void validateOrThrow(RxDocumentServiceRequest request,
